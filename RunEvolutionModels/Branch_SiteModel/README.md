@@ -1,6 +1,5 @@
 ## Pipe lines to run PAML's codeml Branch-Site Model
-### Note: These scripts were created to run on Orthogroups output from OrthoFinder. The OrthoGroup Parsing Scripts should be used to create
-directories for each Orthogroup and generate the correct additional files.
+### Note: These scripts were created to run on Orthogroups output from OrthoFinder. The OrthoGroup Parsing Scripts should be used to create directories for each Orthogroup and generate the correct additional files.
 
 #### 1. check_trees1.py
 	Required Package: ete3
