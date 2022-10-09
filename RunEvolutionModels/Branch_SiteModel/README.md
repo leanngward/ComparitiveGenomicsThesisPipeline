@@ -31,17 +31,15 @@
 	UPDATE NEEDED: If there is '3' for a second foreground species, change the 3 to a $2
 
 
-#### 4. create_branchandsite.py
-	Need: You will need a directory full of gene group subdirectories and a directory of you final tree files. These should be created by the previous scripts.
-	Run Command: python3 create_codeml_files.py [directory of group directories] [tree file directory] [optional: MNM flag]
-	How it Works: This file uses the subdirectory groupname to create codeml control files for both an alternative and null branch model. It can also create
-			.sh files. All the files it creates will be in the main 
-			directory, outside the group directories. If all the files don't completely run, the created job files can still be run individually.
-			***Note: Do not re-run this script unless it fails to run or you will create duplicate files.
+#### 4. create_branchsite_controlfiles.py AND create_nullbranchsite_controlfiles.py
 
-			Since multinucleotide mutations affect the functioning of the branch-site model, I ran the FitMultiModel from HyPhy model to remove sites affected by MNM's.
-			Then, I re-ran the branch-site model on the edited OrthoGroups. The MNM flag is NOT required, but if you want to naming scheme of the files to add 'mnm' for distiction
-			from the first run provide "T" for True. All other input will be ignored and MNM flag will be False.
+	Need: You will need a directory full of gene group subdirectories and a directory of you final tree files. These should be created by the previous scripts.
+	Run Command: python3 create_codeml_files.py [directory of group directories] [tree file directory] [group flag name] [optional: MNM flag]
+	How it Works: This file uses the subdirectory groupname to create codeml control files for both an alternative and null branch model. All the files it creates will be in the main directory, outside the group directories.
+	
+	The groupName flag will be used on output files and in the control files to specify which models you are running. 
+
+	Since multinucleotide mutations affect the functioning of the branch-site model, I ran the FitMultiModel from HyPhy model to remove sites affected by MNM's. Then, I re-ran the branch-site model on the edited OrthoGroups. The MNM flag is NOT required, but if you want to naming scheme of the files to add 'mnm' for distiction from the first run provide "T" for True. All other input will be ignored and MNM flag will be False.
 
 	Important Parameters:
 		Alt:
