@@ -32,11 +32,14 @@
 	UPDATE NEEDED: If there is '3' for a second foreground species, change the 3 to a $2
 
 
-#### 4. create_branchmodel.py
+#### 4. create_branch_control_files.py AND create_null_control_files.py
 	Need: You will need a directory full of gene group subdirectories and a directory of you final tree files. These should be created by the previous scripts.
-	Run Command: python3 create_codeml_files.py [directory of group directories] [tree file directory] [Group Name Flag]
+	Run Command: create_branch_control_files.py [directory of group directories] [tree file directory] [Group Name Flag]
+	Run Command: create_null_control_files.py [directory of group directories] [tree file directory]
 	How it Works: This file uses the subdirectory groupname to create codeml control files for both an alternative and null branch model. It also creates .sh files to submit all the control files to the job queue using the "qsub" command. All the files it creates will be in the main directory, outside the group directories. If all the files don't completely run, the created job files can still be run individually.
-			***Note: re-running script will create duplicate files. Delete these before running again.
+	
+	***Note: re-running script will create duplicate files. Delete these before running again.
+	
 	The group name flag allows the addition of more strings to the output files (and paths in the control file) to allow for multiple models to be run.
 	
 	Important Parameters:
@@ -47,6 +50,8 @@
 			model = 0
 			Nssites = 0
 	Note: These are only suggestions, parameters should be determined from the PAML manual.
+	
+	The Null file will probably only be run onces for tree as there are no specified foreground branches.
 
 #### 5. See "Submitting Jobs" Section under Thesis Project Pipeline/RunEvolutionModels /
 
