@@ -34,11 +34,11 @@
 
 #### 4. create_branchmodel.py
 	Need: You will need a directory full of gene group subdirectories and a directory of you final tree files. These should be created by the previous scripts.
-	Run Command: python3 create_codeml_files.py [directory of group directories] [tree file directory]
-	How it Works: This file uses the subdirectory groupname to create codeml control files for both an alternative and null branch model. It also creates
-			.sh files to submit all the control files to the job queue using the "qsub" command. All the files it creates will be in the main 
-			directory, outside the group directories. If all the files don't completely run, the created job files can still be run individually.
-			***Note: Do not re-run this script unless it fails to run or you will create duplicate files.
+	Run Command: python3 create_codeml_files.py [directory of group directories] [tree file directory] [Group Name Flag]
+	How it Works: This file uses the subdirectory groupname to create codeml control files for both an alternative and null branch model. It also creates .sh files to submit all the control files to the job queue using the "qsub" command. All the files it creates will be in the main directory, outside the group directories. If all the files don't completely run, the created job files can still be run individually.
+			***Note: re-running script will create duplicate files. Delete these before running again.
+	The group name flag allows the addition of more strings to the output files (and paths in the control file) to allow for multiple models to be run.
+	
 	Important Parameters:
 		Alt:
 			model = 2
