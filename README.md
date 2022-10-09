@@ -1,6 +1,6 @@
 ## These are the most up-to-date versions of the pipeline for the comparitive genomics analysis for my master's thesis.
 
-### Note: Currently, this pipeline is not stand-alone. It is formatted to run with specific software such as OrthoFinder, CODEML, HyPhy, HMMER2GO and topGO more. Many PATHS are also specific to my computer set-up. If you would like to make use of these scripts and need help adjusting them for your own use, please contact leann.g.ward@gmail.com.
+### Note: Currently, this pipeline is not stand-alone. It is formatted to run with specific software such as OrthoFinder, CODEML, HyPhy, HMMER2GO, topGO, and more. Many PATHS are also specific to my computer set-up. If you would like to make use of these scripts and need help adjusting them for your own use, please contact leann.g.ward@gmail.com.
 
 #### InvestigateHomology
 
