@@ -2,7 +2,7 @@ import os
 import sys
 
 
-def codeml_branches_runner(codeml_prefix,seq_file,treefile,outfile,groupName):
+def codeml_branches_runner(codeml_prefix,seq_file,treefile,outfile,gene_name,groupName):
     import subprocess
     #create the control file for codeml to run
     control_file_name = codeml_prefix  + gene_name + '_'+groupName+'_branchsite_null.ctl'
