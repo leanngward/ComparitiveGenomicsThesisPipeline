@@ -27,10 +27,9 @@
 	How it Works: Removes stop codons and translates the nucleotide sequence files within each subdirectory. Creates new files named:
 	"protein_[filename]"  
 
-##### 4. curate_pipeline.sh (also updated to lugh_curate_pipeline.sh)
+##### 4. curate_pipeline.sh [name for directory of gene trees]
 	MUST BE IN THE DIRECTORY TO RUN
-	MUST CREATE TREE FILE DIRECTORY AND EDIT PATH FOR IT
-	Need: Directory filled with subdirectories, each subdirectory should be named as the ORTHOGROUP/genegroup (the result directory from rename_orthogroup_genes.py).
+	Need: Directory filled with subdirectories, each subdirectory should be named as the ORTHOGROUP/genegroup (the result directory from rename_orthogroup_genes.py). Provide name of the directory where gene trees should be copied. 
 	      Each subdirectory should only contain the nucleotide fasta file and the protein fasta file. Named like they from rename_orthogroup_genes.py and
 	      translate_sequences.py (for example, OG0001832.fa and protein_OG0001832.fa)
 	NOTES: Remember to make the following edits per run: change the out directory location for tree files to be copied to
