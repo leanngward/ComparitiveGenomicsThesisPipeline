@@ -1,7 +1,8 @@
 
 #!/bin/bash
 
-
+treeDir=$1
+mkdir ${treeDir}
 for f in *                 #loops through all of the files in the working directory
 do
 	GENENAME="$f"
