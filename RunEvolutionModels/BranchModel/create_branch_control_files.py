@@ -1,6 +1,6 @@
 import os
 import sys
-def codeml_branches_runner(codeml_prefix,seq_file,treefile,outfile,scriptfile_b, gene_name,group_flag):
+def codeml_branches_runner(codeml_prefix,seq_file,treefile,outfile,scriptfile_b, gene_name,groupName):
     import subprocess
     #create the control file for codeml to run
     control_file_name = codeml_prefix  + gene_name + "_"+groupName+"_branch_alt.ctl"
@@ -39,7 +39,7 @@ dirName = sys.argv[1]
 treeDir = sys.argv[2]
 
 #Provide Group Name of Interest
-groupFlag = sys.argv[3]
+groupName = sys.argv[3]
 
 dirList = os.listdir(dirName)
 geneDirName = ''
