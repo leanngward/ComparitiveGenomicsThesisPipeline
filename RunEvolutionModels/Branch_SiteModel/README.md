@@ -20,16 +20,16 @@
 	How it Works: Loops through the tree files in the input directory. Creates a pruned tree file with the topology of the given supertree.
 		      For use with codeml!
 
+
 #### 3. parse_trees3.py
 	Need: The directory filled with pruned tree from prune_trees2.py
 	Run Command: python3 parse_trees3.py [pruned tree directory name] [output directory name]
 			***Note: This creates the directory for you, so if it is already created then delete it or pick new output name.
 	How it Works: Final curation step for codeml trees. Adds back the group/gene names to each node in the tree. Changes
-                      The 2 to a $1 on the species of interest for the codeml run. See PAML manual for details about choosing branches of interest.
-
-	UPDATE 3/02/2022: Scripts now removes ":" and "1" for a cleaner output treefiles.
-	UPDATE NEEDED: If there is '3' for a second foreground species, change the 3 to a $2
-
+                      the 2 to a $1 and the 3 to a $2 for up to two foreground omegas on the species of interest in a codeml run. See PAML manual for details about choosing branches of interest.
+		      
+	NEW ALTERNATE SCRIPT: parse_stemandcrown_trees3.py
+	Changes 2 or 3 to a #1 or #2 (respectively). This allows for two or three foregrounds (with stems and clades) in a codeml run.
 
 #### 4. create_branchsite_controlfiles.py AND create_nullbranchsite_controlfiles.py
 
