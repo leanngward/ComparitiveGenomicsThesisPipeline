@@ -25,6 +25,7 @@ def read_null(filename):
 		lnl = "NA"
 
 	infile.close()
+	lnl = lnl.strip()
 	return lnl
 
 def read_alt(filename):
@@ -94,6 +95,16 @@ def read_alt(filename):
 	else:
 		site = 'NA'
 
+	lnl = lnl.strip()
+	bg0 = bg0.strip()
+	bg1 = bg1.strip()
+	bg2a = bg2a.strip()
+	bg2b = bg2b.strip()
+	fg0 = fg0.strip()
+	fg1 = fg1.strip()
+	fg2a = fg2a.strip()
+	fg2b = fg2b.strip()
+
 	infile.close()
 	return lnl,bg0,bg1,bg2a,bg2b,fg0,fg1,fg2a,fg2b,newsite;
 
@@ -112,12 +123,12 @@ filedir = sys.argv[1]
 outputname = sys.argv[2]
 outfile = open(outputname,'w+')
 
-
-b_name = filedir+"BEB_output.txt"
+outflag = sys.argv[3]
+b_name = filedir+outflag+"_BEB_output.txt"
 out2 = open(b_name, 'w+')
 
 #write the headers for outfile
-outfile.write("Group\tNull lnL\t\tAlt lnL\tBackground w0\tBackground w1\tBackground w2a\tBackground w2b\tAlt w0\tAlt w1\tAlt w2a\t Alt w2b\n")
+outfile.write("Group\tNull lnL\tAlt lnL\tBackground w0\tBackground w1\tBackground w2a\tBackground w2b\tAlt w0\tAlt w1\tAlt w2a\t Alt w2b\n")
 
 out2.write("Group\tBEB Values\n")
 # Create a section to loop through a directory of group names that are subdirectories.
@@ -135,11 +146,11 @@ for file in os.listdir(filedir):
 			if os.path.isfile(fullpathsubfile):
 				if re.search(".treefile",subfile):
 					groupname = subfile[4:-23]
-				if re.search("_null_branchsite.out",subfile):
+				if re.search(outflag+"_null_branchsite.out",subfile):
 					nullflag = True
 					nullfile = fullpathsubfile
 					nullvalues = read_null(nullfile) 
-				if re.search("_alt_branchsite.out",subfile):
+				if re.search(outflag+"_alt_branchsite.out",subfile):
 					altflag = True
 					altfile = fullpathsubfile
 					altvalues = read_alt(altfile)
@@ -169,13 +180,5 @@ for file in os.listdir(filedir):
 		altvalues = ()
 		nullvalues = ()
 
-name = "undonelist.txt"
-todolist = open(name,"w+")
-for items in unfinishednull:
-	todolist.write("qsub "+items+"_null_bsite_runcod.sh \n")
-for items in unfinishedalt:
-	todolist.write("qsub "+items+"_alt_bsite_runcod.sh \n")
-
-todolist.close()
 outfile.close()
 out2.close()
