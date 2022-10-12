@@ -31,6 +31,9 @@ def read_null(filename):
 	else:
 		dnds = "NA"
 	infile.close()
+	lnl = lnl.strip()
+	dnds = dnds.strip()
+	
 	return lnl,dnds; #this is tuple and should be stored as such
 
 def read_alt(filename):
@@ -66,6 +69,11 @@ def read_alt(filename):
 		dnds0 = "NA"
 		dnds1 = "NA"
 	infile.close()
+	
+	lnl = lnl.strip()
+	dnds0 = dnds0.strip()
+	dnds1 = dnds1.strip()
+	
 	return lnl,dnds0,dnds1;
 
 #initializes the tuples to store output from function
@@ -90,6 +98,9 @@ outfile.write("Group\tNull lnL\tNull dN/dS\tAlt lnL\tAlt Omega 0 Background\tAlt
 
 filedir = sys.argv[1]
 
+#Provide the flag to find output files
+outflag = sys.argv[3]
+
 #Loops through every files in the given directory
 for file in os.listdir(filedir):
 	subdir = os.path.join(filedir,file)
@@ -102,11 +113,11 @@ for file in os.listdir(filedir):
 			if os.path.isfile(fullpathsubfile):
 				if re.search(".treefile",subfile):
 					groupname = subfile[4:-23]
-				if re.search("_null_branch.out",subfile):
+				if re.search("branch_null",subfile):
 					nullflag = True
 					nullfile = fullpathsubfile
-					nullvalues = read_null(nullfile) 
-				if re.search("_alt_branch.out",subfile):
+					nullvalues = read_null(nullfile)
+				if re.search(outflag+"_branch_alt",subfile):
 					altflag = True
 					altfile = fullpathsubfile
 					altvalues = read_alt(altfile)
@@ -130,12 +141,5 @@ for file in os.listdir(filedir):
 		altvalues = ()
 		nullvalues = ()
 
-name = "undonelist.txt"
-todolist = open(name,"w+")
-for items in unfinishednull:
-	todolist.write("qsub "+items+"_null_runcod.sh \n")
-for items in unfinishedalt:
-	todolist.write("qsub "+items+"_alt_runcod.sh \n")
 
-todolist.close()
 outfile.close()
