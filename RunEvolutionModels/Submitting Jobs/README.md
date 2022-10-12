@@ -18,4 +18,5 @@
 	Run Command: ./run_codeml_controlfiles_inparallel.sh [list file name]
 		
 ##### 5. submit_yn00_joblist_parallel.py 
-	Similar to the prevous script, but instead of codeml it runs the yn00 model.
+	Similar to the prevous script, but Python makes the .sh file for you. It also runs yn00 PAML model instead of codeml.
+
