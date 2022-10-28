@@ -1,0 +1,228 @@
+---
+title: "enrichment_omega_analysis"
+author: "LeAnn Ward"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=F}
+    
+## Libraries
+    library(ggplot2)
+    library(dplyr)
+    library(Rgraphviz)
+
+
+## Load TOPGO ####
+  #remove.packages("topGO")
+  #install.packages('rlang')
+  #install.packages("devtools")
+  #devtools::install_github("ycl6/topGO-feat", ref = "v2.41.0-barplot")
+
+  library(topGO)
+  library(enrichplot)
+```
+
+```{r}
+
+
+## Set Up Environment and Variables ####
+  #Set working directory
+    setwd("C:/Users/leann/OneDrive/grad research_newer/butterfly_aging/run7/enrichment_other")
+
+  #Set evodata file name
+    infile <- "hstem_edited_branch_output.tsv"
+    speciesname = "Heliconius"
+    groupname = "Stem"
+    
+  #Set mapping file name
+
+  #The mapfile is the go term mapping with ONLY heliconius (you can choose any species) and the the speciesname_ removed
+  #Edit in excel first
+    
+    mapfile <- "hmel_sc_og1.txt"
+    mapdf <- read.delim(mapfile,header=FALSE,sep="\t")
+  
+## Load in the Evolution Model Output ####
+  evodata <- read.delim(infile, header = TRUE, sep = "\t")
+  evodata <- evodata[evodata$Alt.Omega.1 < 99, ]
+  nrow(evodata)
+  head(evodata)
+  
+
+## Find significant omega values ####
+  
+  #Calculate log-likelihood ratio
+    evodata$LR <- -2 * (evodata$Null.lnL - evodata$Alt.lnL)
+
+  #Calculate p-value
+    evodata$pval <- pchisq(evodata$LR, df = 1, lower.tail = FALSE)
+  
+  #adjust p-value to control false discovery rate
+    evodata$padj <- p.adjust(evodata$pval, method = 'fdr')
+    head(evodata)
+  
+  #create table with only significant results
+    sigevodata <- evodata[evodata$padj < .05, ]
+    nrow(sigevodata)  
+  
+    head(sigevodata)
+
+  #Define a cut-off for top10%
+    head(sigevodata)
+    n <- 10
+    topset <- sigevodata[sigevodata$Alt.Omega.1 > quantile(sigevodata$Alt.Omega.1,prob=1-n/100,na.rm=TRUE),]
+    testvalue_top <- min(topset$Alt.Omega.1)
+    print(testvalue_top)
+    
+  #Define a cut-off for bottom 10%
+    n <- 90
+    bottomset <- sigevodata[sigevodata$Alt.Omega.1 > quantile(sigevodata$Alt.Omega.1,prob=1-n/100,na.rm=TRUE),]
+    testvalue_bottom <- min(bottomset$Alt.Omega.1)
+    print(testvalue_bottom)
+    
+
+  #find a percentage of the top and bottom values
+  
+
+  
+## Create appropriate variables and run topGO ####
+  
+  #Use the topGO geneSelectionFun when creating the topGO object?
+  #Custom annotations - for each gene identifier are listed GO terms to which this gene is specifically annotated
+  
+    #Create custom annotation with topGO function readMappings
+    #must open the file directly. doesn't read from a table.
+    
+      geneID2GO <- readMappings(file = mapfile, sep = "\t", IDsep = ",")
+      str(head(geneID2GO))
+      length(geneID2GO)
+      
+    #named vector of the numerical values where the names are the gene indentifiers. makes the gene universe
+      subset <- sigevodata
+      
+    #Here I am using the foreground omega values
+      geneuniverse <- as.numeric(subset$Alt.Omega.1)
+      names(geneuniverse) <- subset$Group
+
+      head(geneuniverse)
+      length(geneuniverse)
+
+      
+#Write a function to choose select genes based on their scores
+      
+      topDiffGenes <- function(allScore) {
+      return(allScore > testvalue_top )
+      }
+      
+      geneList <- topDiffGenes(geneuniverse)
+      length(geneList)
+      
+      topobject_BP <- new("topGOdata", ontology = 'BP', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+    
+      topobject_MF <- new("topGOdata", ontology = 'MF', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+    
+    
+      topobject_CC <- new("topGOdata", ontology = 'CC', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+      
+      
+#Write a function to choose select genes based on their scores (topGO uses adjusted p-values)
+      
+      bottomDiffGenes <- function(allScore) {
+        return(allScore < testvalue_bottom )
+      }
+      
+      geneList2 <- bottomDiffGenes(geneuniverse)
+      length(geneList2)
+      
+      bottomobject_BP <- new("topGOdata", ontology = 'BP', allGenes = geneuniverse, geneSelectionFun = bottomDiffGenes,
+                          annot = annFUN.gene2GO, gene2GO = geneID2GO)
+      
+      bottomobject_MF <- new("topGOdata", ontology = 'MF', allGenes = geneuniverse, geneSelectionFun = bottomDiffGenes,
+                          annot = annFUN.gene2GO, gene2GO = geneID2GO)
+      
+      
+      bottomobject_CC <- new("topGOdata", ontology = 'CC', allGenes = geneuniverse, geneSelectionFun = bottomDiffGenes,
+                          annot = annFUN.gene2GO, gene2GO = geneID2GO)
+      
+    
+## Explore topGO results w/ statistical tests ####
+    #based on gene COUNTS
+    resultFisher_BP <- runTest(topobject_BP, algorithm="classic", statistic="fisher") 
+    resultFisher_MF <- runTest(topobject_MF, algorithm="classic", statistic="fisher")
+    resultFisher_CC <- runTest(topobject_CC, algorith="classic", statistic="fisher")
+    
+    bot_resultFisher_BP <- runTest(bottomobject_BP, algorithm="classic", statistic="fisher") 
+    bot_resultFisher_MF <- runTest(bottomobject_MF, algorithm="classic", statistic="fisher")
+    bot_resultFisher_CC <- runTest(bottomobject_CC, algorith="classic", statistic="fisher")
+    
+    
+## Run KS elim test for top 10% of genes ####
+      
+    resultKS.elim.BP <- runTest(topobject_BP, algorithm="elim", statistic="ks")
+    resultKS.elim.MF <- runTest(topobject_MF, algorithm="elim", statistic="ks")
+    resultKS.elim.CC <- runTest(topobject_CC, algorithm="elim", statistic="ks")
+
+    
+    allRes_BP <- GenTable(topobject_BP, classicFisher = resultFisher_BP, elimKS = resultKS.elim.BP, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)  
+    
+    allRes_MF <- GenTable(topobject_MF, classicFisher = resultFisher_MF, elimKS = resultKS.elim.MF, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)
+    
+    allRes_CC <- GenTable(topobject_CC, classicFisher = resultFisher_CC, elimKS = resultKS.elim.CC, 
+                       orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)    
+
+    bptl = paste("allRes_BP",speciesname,groupname,sep="_")
+    mftl = paste("allRes_MF",speciesname,groupname,sep="_")
+    cctl = paste("allRes_CC",speciesname,groupname,sep="_")
+    
+    write.table(allRes_BP,file=bptl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(allRes_MF,file=mftl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(allRes_CC,file=cctl,sep="\t",quote = FALSE, row.names = FALSE)
+    
+    
+#Run KSelim tests for bottom 10% of genes 
+    
+    bot_resultKS.elim.BP <- runTest(bottomobject_BP, algorithm="elim", statistic="ks")
+    bot_resultKS.elim.MF <- runTest(bottomobject_MF, algorithm="elim", statistic="ks")
+    bot_resultKS.elim.CC <- runTest(bottomobject_CC, algorithm="elim", statistic="ks")
+    
+    
+    bot_allRes_BP <- GenTable(bottomobject_BP, classicFisher = bot_resultFisher_BP, elimKS = bot_resultKS.elim.BP, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)  
+    
+    bot_allRes_MF <- GenTable(bottomobject_MF, classicFisher = bot_resultFisher_MF, elimKS = bot_resultKS.elim.MF, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)
+    
+    bot_allRes_CC <- GenTable(bottomobject_CC, classicFisher = bot_resultFisher_CC, elimKS = bot_resultKS.elim.CC, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)    
+    
+    
+    bot_bptl = paste("bottom_allRes_BP",speciesname,groupname,sep="_")
+    bot_mftl = paste("bottom_allRes_MF",speciesname,groupname,sep="_")
+    bot_cctl = paste("bottom_allRes_CC",speciesname,groupname,sep="_")
+    
+    write.table(bot_allRes_BP,file=bot_bptl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(bot_allRes_MF,file=bot_mftl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(bot_allRes_CC,file=bot_cctl,sep="\t",quote = FALSE, row.names = FALSE)
+    
+    
+      
+    ## Explore GO network
+    
+        showSigOfNodes(topobject_BP,score(resultKS.elim.BP), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(topobject_MF,score(resultKS.elim.MF), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(topobject_CC,score(resultKS.elim.CC), firstSigNodes = 5, useInfo = 'all')
+    
+          
+        showSigOfNodes(bottomobject_BP,score(bot_resultKS.elim.BP), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(bottomobject_MF,score(bot_resultKS.elim.MF), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(bottomobject_CC,score(bot_resultKS.elim.CC), firstSigNodes = 5, useInfo = 'all')
+    
+
+```
+
