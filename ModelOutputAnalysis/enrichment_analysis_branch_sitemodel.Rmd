@@ -1,0 +1,179 @@
+---
+title: "enrichment_analysis_branchsite_model"
+author: "LeAnn Ward"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+      
+  # Libraries
+    library(ggplot2)
+    library(dplyr)
+
+  ## Load TOPGO ####
+  #remove.packages("topGO")
+  #install.packages('rlang')
+  #install.packages("devtools")
+  #devtools::install_github("ycl6/topGO-feat", ref = "v2.41.0-barplot")
+    library(topGO)
+      
+    ## Explore GO network
+    #BiocManager::install("Rgraphviz")
+    library(Rgraphviz)
+```
+
+```{r}
+
+## Set Up Environment and Variables ####
+  #Set working directory
+    setwd("C:/Users/leann/OneDrive/grad research_newer/butterfly_aging/run7/enrichment_other")
+
+  #Set evodata file name
+    infile <- "../branchsite_files/omegaoutput/edited_pst_mnm_branchsite_output.tsv"
+    speciesname = "Pieridae"
+    groupname = "Stem"
+    
+    
+    BEB = "../branchsite_files/bebsiteinfo/edited_pst_BEB_mnm_output.txt"
+    BEBcounts = "../branchsite_files/countsinfo/edited_counts_mnm_pst_BEB.txt"
+    totalsites = "../branchsite_files/run7_seq_lengths.txt"
+    
+  #Set mapping file name
+
+  #The mapfile is the go term mapping with ONLY heliconius (you can choose any species) and the the speciesname_ removed
+  #Edit in excel first
+    
+    mapfile <- "hmel_sc_og.txt"
+    mapdf <- read.delim(mapfile,header=FALSE,sep="\t")
+    
+    BEBdata <- read.delim(BEBcounts,header=T,sep="\t")
+  
+## Load in the Evolution Model Output ####
+  evodata <- read.delim(infile, header = TRUE, sep = "\t")
+  nrow(evodata)
+  head(evodata)
+  
+
+## Find significant omega values ####
+  
+  #Calculate log-likelihood ratio
+    evodata$LR <- -2 * (evodata$Null.lnL - evodata$Alt.lnL)
+
+  #Calculate p-value
+    evodata$pval <- pchisq(evodata$LR, df = 1, lower.tail = FALSE)
+  
+  #adjust p-value to control false discovery rate
+    evodata$padj <- p.adjust(evodata$pval, method = 'fdr')
+    head(evodata)
+    
+    #merge table with with BEB counts by Groupname 
+    fulldf <- merge(evodata, BEBdata, by.x='Group', by.y='GroupName')
+    head(fulldf)
+    
+    #create table with only significant results
+    sigevodata <- fulldf[fulldf$padj < .05, ]
+    head(sigevodata)
+    nrow(sigevodata)  
+    
+    #total of sites with SSP
+    sum(sigevodata$Total.Sig.Sites)  
+    
+    #Find total number of sites in all significant genes
+    totsiteslist <- read.delim(totalsites,header=TRUE)
+    sig_total_sites <- subset(totsiteslist,totsiteslist$Group %in% sigevodata$Group)
+    sum(sig_total_sites$Seq.Length)
+    
+    
+
+
+    
+
+#find a percentage of the top and bottom values
+  
+
+  
+## Create appropriate variables and run topGO ####
+  
+  #Use the topGO geneSelectionFun when creating the topGO object?
+  #Custom annotations - for each gene identifier are listed GO terms to which this gene is specifically annotated
+  
+    #Create custom annotation with topGO function readMappings
+    #must open the file directly. doesn't read from a table.
+    
+      geneID2GO <- readMappings(file = mapfile, sep = "\t", IDsep = ",")
+      str(head(geneID2GO))
+      length(geneID2GO)
+      
+    #named vector of the numerical values where the names are the gene indentifiers. makes the gene universe
+      subset <- sigevodata
+      
+    #Here I am using the foreground omega values
+      geneuniverse <- as.numeric(subset$Total.Sig.Sites)
+      names(geneuniverse) <- subset$Group
+      
+      head(geneuniverse)
+
+      
+#Write a function to choose select genes based on their scores
+      
+      topDiffGenes <- function(allScore) {
+      return(allScore > 0 )
+      }
+      
+      geneList <- topDiffGenes(geneuniverse)
+      length(geneList)
+      
+      topobject_BP <- new("topGOdata", ontology = 'BP', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+    
+      topobject_MF <- new("topGOdata", ontology = 'MF', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+    
+    
+      topobject_CC <- new("topGOdata", ontology = 'CC', allGenes = geneuniverse, geneSelectionFun = topDiffGenes,
+                     annot = annFUN.gene2GO, gene2GO = geneID2GO)
+      
+      
+    
+## Explore topGO results w/ statistical tests ####
+    #based on gene COUNTS
+    resultFisher_BP <- runTest(topobject_BP, algorithm="classic", statistic="fisher") 
+    resultFisher_MF <- runTest(topobject_MF, algorithm="classic", statistic="fisher")
+    resultFisher_CC <- runTest(topobject_CC, algorith="classic", statistic="fisher")
+    
+   
+## Run KS elim test ####
+      
+    resultKS.elim.BP <- runTest(topobject_BP, algorithm="elim", statistic="ks")
+    resultKS.elim.MF <- runTest(topobject_MF, algorithm="elim", statistic="ks")
+    resultKS.elim.CC <- runTest(topobject_CC, algorithm="elim", statistic="ks")
+
+    
+    allRes_BP <- GenTable(topobject_BP, classicFisher = resultFisher_BP, elimKS = resultKS.elim.BP, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)  
+    
+    allRes_MF <- GenTable(topobject_MF, classicFisher = resultFisher_MF, elimKS = resultKS.elim.MF, 
+                          orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)
+    
+    allRes_CC <- GenTable(topobject_CC, classicFisher = resultFisher_CC, elimKS = resultKS.elim.CC, 
+                       orderBy = "elimKS", ranksOf = "classicFisher", topNodes = 50)    
+
+    bptl = paste("allRes_SSP_BP",speciesname,groupname,sep="_")
+    mftl = paste("allRes_SSP_MF",speciesname,groupname,sep="_")
+    cctl = paste("allRes_SSP_CC",speciesname,groupname,sep="_")
+    
+    write.table(allRes_BP,file=bptl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(allRes_MF,file=mftl,sep="\t",quote = FALSE, row.names = FALSE)
+    write.table(allRes_CC,file=cctl,sep="\t",quote = FALSE, row.names = FALSE)
+    
+    
+    
+        showSigOfNodes(topobject_BP,score(resultKS.elim.BP), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(topobject_MF,score(resultKS.elim.MF), firstSigNodes = 5, useInfo = 'all')
+        showSigOfNodes(topobject_CC,score(resultKS.elim.CC), firstSigNodes = 5, useInfo = 'all')
+   
+  
+
+```
