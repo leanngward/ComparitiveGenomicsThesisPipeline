@@ -1,0 +1,153 @@
+---
+title: "branch_model_stats"
+author: "LeAnn Ward"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+## Load Libraries ####
+  library("readxl")
+  library(ggplot2)
+  library(reshape2)
+  library(plyr)
+  library(qvalue)
+  library(tidyr)
+  library(Rcpp)
+
+```
+## Goal:
+
+This script produces parses data from PAML's branch-model, runs a log-liklihood ratio test on the data, produces a visualization of the data, and determines if the two distributions are significantly different using the Kolmogorov-Smirnov test.
+
+```{r}
+
+## Set Working Directory ####
+  setwd("C:/Users/leann/OneDrive/grad research_newer/butterfly_aging/run7/branchmodel/")
+
+## Set Variables ####
+  speciesname = "PB"
+  position = "Stem"
+  tl = "Density Distribution of Omega Estimates for Single-Copy Genes in the"
+  title = paste(tl,speciesname,position,sep=" ")
+  #Make the figure title
+  
+## Ctrl-F for Plots labels
+  #Replace 'Heliconius' or 'PB' or 'PB'
+
+## Open data file ####
+  inFile = "edited_bpstem_branch_output.tsv"
+  ld = read.delim(inFile, header = TRUE, sep = "\t")
+  head(ld)
+  #Expected headers for BRANCH MODEL: Group \t Null.lnL \t Null.dN.dS \t Alt.lnL \t Alt.Omega.0.Background \t Alt.Omega.1
+  
+  
+## Prepare input data ####
+  
+  #Calculate a log ratio column 
+  #Formula: -2 * (Null.lnL - Alt.lnL)
+  ld$LR <- -2 * (as.numeric(ld$Null.lnL) - as.numeric(ld$Alt.lnL))
+  head(ld)
+  
+  
+  #Change column names
+  colnames(ld) <- c("Group", "nulllnl", "nullomega", "altlnl", "bg", "fg", "LR")
+  head(ld)
+  nrow(ld)
+  
+  # Remove values of >99. These are invalid results in codeml.
+  print(nrow(ld[ld$fg > 99, ]))
+  print(nrow(ld[ld$bg > 99, ]))
+  ld <- ld[ld$fg < 99, ]
+  nrow(ld)
+    
+    
+## Find which rows are significant ####  
+  #Calculate significance of the log ratio
+  ld$pval <- pchisq(ld$LR, df = 1, lower.tail = FALSE)
+  ld$padj <- p.adjust(ld$pval, method = 'fdr')
+  
+
+  head(ld)
+  
+  #Print the number of gene group significant under the branch model
+  print(nrow(ld[ld$padj < .05, ]))
+  
+  
+  print("# of genes with omega higher in PB")
+  nrow(subset(ld,fg>bg))
+  
+  
+  print("# of significant foreground genes under positive selection")
+  sigevodata <- ld[ld$padj < .05, ]
+  nrow(sigevodata[sigevodata$fg > 1, ])  
+  print(sigevodata[sigevodata$fg > 1,]) 
+## Transform Data to be plotted ####
+  sorted_ld = ld[order(-ld$LR),]
+  head(sorted_ld)
+  
+  #Exclude omega values with subset() function
+  wide_ld = subset(sorted_ld, select = c(Group,bg,fg,LR,pval,padj))
+  head(wide_ld)
+  
+  #Transform the previous data into long format so that "Background" and "Foreground" are categories
+  #for each respective group
+  
+  long_ld = gather(wide_ld, level, omega, bg, fg)
+  head(long_ld)
+  
+  #rename bg and fg to "Background" and the foreground species
+ 
+  long_ld$level <- replace(long_ld$level, long_ld$level=='bg', 'Background')
+  long_ld$level <- replace(long_ld$level, long_ld$level=='fg', speciesname)
+  head(long_ld)  
+  
+## bin the omegas ####
+  #Set maximum values to consider
+  c = 3
+  long_ld$omega_bin <- long_ld$omega
+  
+  #any omega values that are greater than c should be set to c
+  long_ld$omega_bin[long_ld$omega_bin > c] <- c
+  head(long_ld)
+  nrow(long_ld)
+  
+  nrow(long_ld[ , long_ld$omega_bin > 3])
+  
+## Graph the Results ####
+  
+  mu <- ddply(subset(long_ld), "level", summarise, grp.mean=mean(omega_bin))
+  mu
+
+  avg_bg = mu[1,2]
+  favg_bg = format(round(avg_bg,2), nsmall=2)
+  
+  avg_fg = mu[2,2]
+  favg_fg = format(round(avg_fg,2), nsmall=2)
+  print(favg_bg)
+  print(favg_fg)
+  myplot <- ggplot(subset(long_ld, long_ld$omega_bin < 1.1), aes(x=omega_bin, fill = level, color=level)) +
+    ggtitle(title) +
+    geom_density(alpha = 0.6) +
+    xlab('dN/dS') + 
+    ylab('Density') +
+    geom_vline(data=mu, aes(xintercept=grp.mean, color=level),
+               linetype="dashed") +
+    #geom_text(aes(x = .05, label = paste0("omega = ",favg_bg), y=10), colour = "red") +
+    #geom_text(aes(x = .11, label = paste0("omega = ",favg_fg), y=8), colour = "blue") +
+    scale_color_manual(values=c(Background="red", PB="blueviolet")) +
+    scale_fill_manual(values=c(Background="red", PB="blueviolet")) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line =   element_line(colour = "black"))
+  
+  
+  
+  myplot + coord_cartesian(xlim = c(0,0.6), ylim = c(0, 15))
+
+## Perform stats - Kolgomorov-Smirnoff test ####
+  bg_omega = subset(long_ld, level == "Background")$omega_bin
+  fg_omega = subset(long_ld, level == "PB")$omega_bin
+  ks.test(fg_omega, bg_omega)
+  
+
+```
+
